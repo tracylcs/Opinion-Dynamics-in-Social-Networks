@@ -192,7 +192,7 @@ class OpinionSusceptibilityProblem:
         a = self.a0 + self.b*x
         n = self.n
         eps_a = np.amin(a)
-        it = np.int(np.log(eps*eps_a/n)/np.log(1-eps_a))
+        it = np.int(np.log(eps*eps_a)/np.log(1-eps_a))
         z = np.ones((n,1))
         r = np.ones((n,1))
         I = np.identity(n)
