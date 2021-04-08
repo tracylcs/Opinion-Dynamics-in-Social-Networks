@@ -162,7 +162,7 @@ class OpinionSusceptibilityProblem:
         z = np.matmul(M, np.matmul(np.diag(a), self.s))
         return self.b/self.n*np.multiply(np.multiply(M.sum(axis=0)[:,None], np.reshape(1/(1-a), (self.n,1))), self.s-z)
   
-    def z_approx(self, x, eps=1e-4):
+    def z_approx(self, x, eps):
          
         # Take a budget distribution parameter x as input
         # Return an approximated equilibrium opinion vector
@@ -180,10 +180,10 @@ class OpinionSusceptibilityProblem:
         return z
     
     def f_approx(self, x):
-        z = self.z_approx(x)
+        z = self.z_approx(x, 1)
         return np.average(z)
     
-    def df_dx_approx(self, x, eps=1e-1):
+    def df_dx_approx(self, x, eps):
         
         # Take a budget distribution parameter x as input
         # Return an approximated gradient vector
@@ -352,7 +352,7 @@ class OpinionSusceptibilityProblem:
         
         for t in range(maxiter):
             
-            g = self.df_dx_approx(x) # gradient evaluation
+            g = self.df_dx_approx(x, np.log(self.n)) # gradient evaluation
             
             if (max(np.abs(g))<gtol): # inf norm of the gradient < gtol
                 end = time.time()
