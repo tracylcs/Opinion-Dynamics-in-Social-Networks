@@ -24,8 +24,7 @@ class OpinionSusceptibilityProblem:
         self.x_ub = (self.u-self.a0)/self.b
         self.x_ub = np.where(self.x_ub>1, 1, self.x_ub)
     
-    def optimistic_local_search(self, maxiter=200):   
-        # Is it necessary to set the 'maxiter' here?
+    def optimistic_local_search(self, maxiter=200):
     
         # Implementation of the Optimistic Local Search (Algorithm 2 in Chan et al., 2019 [4])
         # Return an unbudgeted optimal solution
