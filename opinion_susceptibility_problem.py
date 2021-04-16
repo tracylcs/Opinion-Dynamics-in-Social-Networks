@@ -97,7 +97,7 @@ class OpinionSusceptibilityProblem:
                     success += 1
                 trial += 1
                         
-        print("L1-budgeted optimal from Random Sampling:", minfx)
+        print("L1-budgeted optimal value from Random Sampling:", minfx)
         
         return feval
 
@@ -179,7 +179,7 @@ class OpinionSusceptibilityProblem:
         return z
     
     def f_approx(self, x):
-        z = self.z_approx(x, 1)
+        z = self.z_approx(x, 1e-1)
         return np.average(z)
     
     def df_dx_approx(self, x, eps):
@@ -191,7 +191,7 @@ class OpinionSusceptibilityProblem:
         a = self.a0 + self.b*x
         n = self.n
         eps_a = np.amin(a)
-        it = np.int(np.log(eps*eps_a)/np.log(1-eps_a))
+        it = np.int(np.log(eps*eps_a)/np.log(1-eps_a))+1
         z = np.ones((n,1))
         r = np.ones((n,1))
         I = np.identity(n)
@@ -201,27 +201,21 @@ class OpinionSusceptibilityProblem:
             r = np.ones((n,1)) + np.matmul(np.transpose(self.P), np.matmul(I-np.diag(a),r))
         return self.b/self.n*np.matmul(np.diag(np.reshape(self.s-z, (n,)))*np.diag(1/(1-a)),r)
     
-    def design_matrix(self, x, colnum):
-        # Return a design matrix built on the direction vector x provided
-        C = np.zeros((self.n, colnum))
-        col = 0
-        for i in range(self.n):
-            if (x[i] != 0):
-                if (col == colnum):
-                    for j in range(colnum):
-                        C[i,j] = -x[i]
-                    return C
-                else:
-                    C[i,col] = x[i]
-                    col += 1
-                    
     def projection_matrix(self, x, colnum):
         # Return the projection matrix based on the direction vector x provided
+        n = self.n
         if (colnum != 0):
-            C = self.design_matrix(x, colnum)
+            C = -1/(colnum+1)*np.matmul(np.reshape(x,(n,1)),np.reshape(x,(1,n)))
+            for i in range(n):
+                if (x[i]!=0):
+                    C[i,i]+=1
         else:
-            C = np.reshape(x,(self.n,1))
-        return np.matmul(np.matmul(C,inv(np.matmul(C.T,C))),C.T)
+            for i in range(n):
+                if (x[i]!=0):
+                    break
+            C = np.zeros((n,n))
+            C[i,i] = 1
+        return C
    
     def stepping(self, currentx, direc, d, currentfx):
         
@@ -312,10 +306,9 @@ class OpinionSusceptibilityProblem:
                 
         return d, direc, count_zero
 
-    def print_termination_details(self, fx, num_hit, time):
-        print("Optimal value:", fx)
-        print("|{xi|xi=0 or xi=li or xi=ui}|:", num_hit)
-        print("Time taken:", round(time, 2), "s")
+    def print_termination_details(self, fx, num_hit, time, it):
+        print("Time taken:", round(time, 2), "s, no. of iterations =", it)
+        print("L1-budgeted optimal value from Projected Gradient Algorithm=", fx, ", |{xi|xi=0 or xi=li or xi=ui}|=", num_hit)
         return
     
     def projected_gradient_algorithm(self, maxiter, maxt, gtol, print_every):
@@ -347,7 +340,7 @@ class OpinionSusceptibilityProblem:
                                      index=['x'+str(i) for i in range(n)]+
                                      ['fx',"|{xi|xi=0 or xi=li or xi=ui}|"]),
                            ignore_index=True)
-        print("Initial:", fx, ", |{xi|xi=0 or xi=li or xi=ui}|:", num_hit)
+        print("Initial: fx=", fx, ", |{xi|xi=0 or xi=li or xi=ui}|=", num_hit)
         
         for t in range(maxiter):
             
@@ -356,7 +349,7 @@ class OpinionSusceptibilityProblem:
             if (max(np.abs(g))<gtol): # inf norm of the gradient < gtol
                 end = time.time()
                 print("The gradient is too small. Projected Gradient Algorithm terminates.")
-                self.print_termination_details(fx, num_hit, end-start)
+                self.print_termination_details(fx, num_hit, end-start, t)
                 return self.a0 + self.b*x, path
                         
             d, direc, count_zero = self.projected_gradient(x, g)
@@ -367,7 +360,7 @@ class OpinionSusceptibilityProblem:
                         # projected gradient points outside the feasible region
                     end = time.time()
                     print("Projected Gradient Algorithm terminates. A vertex of the feasible region is returned.")
-                    self.print_termination_details(fx, num_hit, end-start)
+                    self.print_termination_details(fx, num_hit, end-start, t)
                     return self.a0 + self.b * x, path
                 
                 else: # projected gradient points into the feasible region
@@ -382,7 +375,7 @@ class OpinionSusceptibilityProblem:
                                           # but the inf norm of the projected gradient < gtol
                 end = time.time()
                 print("The projected gradient is too small. Projected Gradient Algorithm terminates.")
-                self.print_termination_details(fx, num_hit, end-start)
+                self.print_termination_details(fx, num_hit, end-start, t)
                 return self.a0 + self.b * x, path
             
             else: # the gradient is projected on a k-face, where 1<k<n,
@@ -397,15 +390,15 @@ class OpinionSusceptibilityProblem:
                                ignore_index=True)
 
             if ((t+1)%print_every==0):
-                print("Iteration",t+1,":", fx, ", |{xi|xi=0 or xi=li or xi=ui}|:", num_hit)
+                print("It",t+1,": fx=", fx, ", |{xi|xi=0 or xi=li or xi=ui}|=", num_hit)
 
             if (tic-start>maxt): # running time exceeds maximum
                 end = time.time()
                 print("Searching time reaches maximum. Projected Gradient Algorithm terminates.")
-                self.print_termination_details(fx, num_hit, end-start)
+                self.print_termination_details(fx, num_hit, end-start, t+1)
                 return self.a0 + self.b * x, path
             
         end = time.time() # number of iterations exceeds maximum
         print("Searching iteration reaches maximum. Projected Gradient Algorithm terminates.")
-        self.print_termination_details(fx, num_hit, end-start)
+        self.print_termination_details(fx, num_hit, end-start, t+1)
         return self.a0 + self.b * x, path
