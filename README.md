@@ -1,5 +1,5 @@
 # Budgeted Opinion Dynamics with Varying Susceptibility to Persuasion
-Joint work with Dr. Hubert Chan
+Joint work with [Dr. Hubert Chan](https://i.cs.hku.hk/~hubert/)
 
 ## Overview
 This study focuses on an opinion formation model where each agent $`i \in \{1,\cdots,N\}`$ has an innate opinion $`s_i`$ represented as a value in the interval $`[0, 1]`$. Agents update their expressed opinions iteratively (in discrete time steps) based on a weighted average of their peers' opinions (captured by a row stochastic matrix $`P \in [0,1]^{N\times N}`$) and their own innate position, with the influence of peer opinions modulated by a resistance parameter $`\alpha_i`$. This parameter determines how susceptible an agent is to persuasion; higher values indicate lower susceptibility or higher resistance. The goal is to minimize the average equilibrium opinion (when $`t \to \infty`$) by strategically adjusting these resistance parameters $\alpha$ within given constraints. We call this the *Opinion Susceptibility Problem*.
